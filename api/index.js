@@ -3,7 +3,7 @@ const { createProxyServer } = require("http-proxy");
 
 const app = express();
 const proxy = createProxyServer({});
-const PORT = 3000;
+const PORT = 5000;
 
 app.use((req, res) => {
   const targetUrl = req.query.url; // URL ကို query string မှယူ
@@ -21,3 +21,15 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`Proxy server running on http://localhost:${PORT}`);
 });
+
+module.exports = app;
+
+
+// const express = require("express");
+// const app = express();
+
+// app.get("/", (req, res) => res.send("Express on Vercel"));
+
+// app.listen(5000, () => console.log("Server ready on port 3000."));
+
+// module.exports = app;
