@@ -1,7 +1,7 @@
 {
   "name": "forward_proxy_node_server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "api/proxy.js",
   "scripts": {
     "start": "node ."
   },
