@@ -1,64 +1,72 @@
-const express = require("express");
-const axios = require("axios");
+const express = require('express')
+const axios = require('axios')
 
 const app = express();
+const PORT = 3000;
+
+function getNameFromUrl(url){
+  var name = url.split('/')[url.split('/').length-1];
+  return name;
+}
+function getReadmeText(){
+  return `
+  provided 'bytes' -> ?url=["request url"] ;
+  provided 'stream' -> /stream?url=["request url"]
+  `;
+}
+
 
 app.get("/", async (req, res) => {
-  const targetUrl = req.query.url;
-
+  const targetUrl = req.query.url; // Get URL from query parameters
   if (!targetUrl) {
-    return res.status(400).send("provided url -> `?url=[request url]`");
+    return res.status(400).send(getReadmeText());
   }
 
   try {
+    // Fetch data as bytes
     const response = await axios({
       method: "GET",
       url: targetUrl,
-      responseType: "stream", // Get the response as a stream
+      responseType: "arraybuffer", // Fetch as raw bytes
     });
 
-    res.status(response.status); // Set status code
-    response.data.pipe(res); // Stream response back to client
+    res.set(response.headers); // Copy headers from the original response
+    res.status(response.status).send(response.data); // Send the binary response
+    
   } catch (error) {
     res.status(500).send(`error: ${error.message}`);
   }
 });
 
-app.listen(3000, () => {
-  console.log("Proxy Server running on http://localhost:3000");
+app.get("/stream", async (req, res) => {
+  const targetUrl = req.query.url; // Get URL from query parameters
+  if (!targetUrl) {
+    return res.status(400).send(getReadmeText());
+  }
+
+  try {
+     // Stream Data
+     const response = await axios({
+      method: "GET",
+      url: targetUrl,
+      responseType: "stream", // Stream response
+    });
+
+    // Set Headers (Pass through original response headers)
+    res.writeHead(response.status, {
+      ...response.headers,
+      "Content-Disposition": `attachment; filename="${getNameFromUrl(targetUrl)}"`, // Optional
+    });
+
+    // Pipe Response (Streaming)
+    response.data.pipe(res);
+  } catch (error) {
+    res.status(500).send(`error: ${error.message}`);
+  }
 });
 
-// const express = require("express");
-// const { createProxyServer } = require("http-proxy");
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
 
-// const app = express();
-// const proxy = createProxyServer({});
-// const PORT = 4000;
 
-// app.use((req, res) => {
-//   const targetUrl = req.query.url; // URL ကို query string မှယူ
-//   if (!targetUrl) {
-//     return res.status(400).json({ error: "Missing 'url' query parameter" });
-//   }
-
-//   console.log(`Proxying request to: ${targetUrl}`);
-//   proxy.web(req, res, { target: targetUrl, changeOrigin: true }, (err) => {
-//     console.error("Proxy error:", err);
-//     res.status(500).json({ error: "Proxy request failed" });
-//   });
-// });
-
-// app.listen(PORT, () => {
-//   console.log(`Proxy server running on http://localhost:${PORT}`);
-// });
-
-// module.exports = app;
-
-// const express = require("express");
-// const app = express();
-
-// app.get("/", (req, res) => res.send("Express on Vercel"));
-
-// app.listen(5000, () => console.log("Server ready on port 3000."));
-
-// module.exports = app;
